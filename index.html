@@ -146,7 +146,6 @@
             padding: 10px 0;
             margin: 0 -10px -10px -10px;
         }
-        /* 시간 텍스트 색상을 검정색(#000000)으로 수정 */
         .header-bar .time-display {
             font-size: 18px;
             font-weight: 700;
@@ -228,11 +227,11 @@
             gap: 12px;
         }
 
-        /* 관수(5분), STOP 버튼 박스 영역 (하단에 두꺼운 녹색 선 배치) */
+        /* 관수(5분), STOP 영역 (두꺼운 녹색 선 배치) */
         .water-action-bg {
             background-color: #e2e8e0;
             padding: 15px 12px;
-            border-bottom: 5px solid #1e5e20; /* 두꺼운 녹색 라인 */
+            border-bottom: 5px solid #1e5e20;
         }
 
         /* 오늘관수 끄기 / 켜기 영역 */
@@ -343,7 +342,7 @@
             </div>
         </div>
 
-        <!-- 관수(5분), STOP 영역 (오늘관수 끄기/켜기 박스 위로 이동한 두꺼운 구분선) -->
+        <!-- 관수(5분), STOP 영역 -->
         <div class="water-action-bg">
             <div class="control-grid">
                 <button class="btn btn-blue" onclick="sendCmd('WATER_5MIN')">관수(5분)</button>
@@ -430,12 +429,12 @@
     setInterval(updateClock, 1000);
     updateClock();
 
-    // 2. MQTT 통신 설정
+    // 2. MQTT 통신 설정 (요청하신 브로커, 포트, 토픽 적용)
     function initMQTT() {
         if (mqttClient) return;
 
-        const brokerUrl = 'wss://broker.hivemq.com:8884/mqtt';
-        const subTopic = 'saiifarm/moss/data';
+        const brokerUrl = 'wss://broker.mqtt-dashboard.com:8884/mqtt';
+        const subTopic = 'SF26/SONGDO_MG/SENSOR';
 
         mqttClient = mqtt.connect(brokerUrl);
 
@@ -454,15 +453,26 @@
             document.getElementById('conn-status').style.backgroundColor = '#388e3c';
         });
 
+        // 페이로드 파싱 (콤마 기준 구분: 2번째 데이터 = 온도, 5번째 데이터 = 습도)
         mqttClient.on('message', function (topic, payload) {
             try {
-                const data = JSON.parse(payload.toString());
-                if(data.temp) document.getElementById('temp-val').innerText = data.temp + ' °C';
-                if(data.humi) document.getElementById('humi-val').innerText = data.humi + ' %';
-                if(data.today) document.getElementById('today-status').innerText = data.today;
-                if(data.pump) document.getElementById('pump-status').innerText = data.pump;
+                const messageStr = payload.toString().trim();
+                console.log('수신된 페이로드:', messageStr);
+
+                // 콤마(,)를 기준으로 문자열 분리
+                const parts = messageStr.split(',').map(item => item.trim());
+
+                // 2번째 데이터(인덱스 1) -> 온도
+                if (parts.length >= 2 && parts[1] !== "") {
+                    document.getElementById('temp-val').innerText = parts[1] + ' °C';
+                }
+
+                // 5번째 데이터(인덱스 4) -> 습도
+                if (parts.length >= 5 && parts[4] !== "") {
+                    document.getElementById('humi-val').innerText = parts[4] + ' %';
+                }
             } catch(e) {
-                console.log('일반 문자열 수신:', payload.toString());
+                console.log('페이로드 파싱 오류:', e);
             }
         });
     }
