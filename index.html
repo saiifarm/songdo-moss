@@ -29,15 +29,18 @@
             text-align: center;
         }
         
-        /* 헤더 / 로고 */
+        /* 헤더 / 로고 영역 */
         .logo-area {
-            padding: 15px 0 5px 0;
-            font-size: 32px;
-            font-weight: bold;
-            color: #7ab800;
-            letter-spacing: -1px;
+            padding: 15px 0 10px 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
-        .logo-area span { color: #d81b60; }
+        .logo-area img {
+            max-width: 220px;
+            height: auto;
+            display: block;
+        }
         
         /* 메인 타이틀 & 시간 바 */
         .header-bar {
@@ -167,8 +170,10 @@
 <body>
 
 <div class="container">
-    <!-- 로고 -->
-    <div class="logo-area">sai<span>i</span>farm</div>
+    <!-- 로고 (이미지 태그로 교체) -->
+    <div class="logo-area">
+        <img src="saiifarm-logo1-01.png" alt="saiifarm 로고">
+    </div>
     
     <!-- 타이틀 & 실시간 시계 -->
     <div class="header-bar">
