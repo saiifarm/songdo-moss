@@ -161,6 +161,7 @@
             padding: 12px 0;
             margin-top: 15px;
             letter-spacing: 0.5px;
+            transition: background-color 0.3s;
         }
         .control-header {
             margin-top: 15px;
@@ -213,6 +214,7 @@
             align-items: center;
             justify-content: center;
             box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            transition: background-color 0.3s;
         }
 
         /* 관수 제어 영역 (AUTO / MANUAL 배경) */
@@ -227,7 +229,7 @@
             gap: 12px;
         }
 
-        /* 관수(5분), STOP 영역 (두꺼운 녹색 선 배치) */
+        /* 관수(5분), STOP 영역 */
         .water-action-bg {
             background-color: #e2e8e0;
             padding: 15px 12px;
@@ -250,9 +252,16 @@
             border-radius: 4px;
             cursor: pointer;
             box-shadow: 0 2px 4px rgba(0,0,0,0.2);
-            transition: opacity 0.2s;
+            transition: opacity 0.2s, background-color 0.2s;
         }
         .btn:active { opacity: 0.8; transform: translateY(1px); }
+        .btn:disabled {
+            background-color: #b0bec5 !important;
+            color: #e0e0e0 !important;
+            cursor: not-allowed;
+            box-shadow: none;
+            opacity: 0.6;
+        }
         
         .btn-gray { background-color: #9e9e9e; }
         .btn-green { background-color: #1e5e20; }
@@ -337,24 +346,24 @@
         <!-- AUTO / MANUAL 영역 -->
         <div class="control-section-bg">
             <div class="control-grid">
-                <button class="btn btn-gray" onclick="sendCmd('MODE_AUTO')">AUTO</button>
-                <button class="btn btn-green" onclick="sendCmd('MODE_MANUAL')">MANUAL</button>
+                <button class="btn btn-gray" id="btn-auto" onclick="sendIrrCmd('AUTO')">AUTO</button>
+                <button class="btn btn-green" id="btn-manual" onclick="sendIrrCmd('MANUAL')">MANUAL</button>
             </div>
         </div>
 
         <!-- 관수(5분), STOP 영역 -->
         <div class="water-action-bg">
             <div class="control-grid">
-                <button class="btn btn-blue" onclick="sendCmd('WATER_5MIN')">관수(5분)</button>
-                <button class="btn btn-red" onclick="sendCmd('WATER_STOP')">STOP</button>
+                <button class="btn btn-blue" id="btn-water5" onclick="sendIrrCmd('ON')">관수(5분)</button>
+                <button class="btn btn-red" id="btn-stop" onclick="sendIrrCmd('OFF')">STOP</button>
             </div>
         </div>
 
         <!-- 오늘관수 끄기 / 켜기 영역 -->
         <div class="today-action-bg">
             <div class="control-grid">
-                <button class="btn btn-light-gray" onclick="sendCmd('TODAY_OFF')">오늘관수 끄기</button>
-                <button class="btn btn-light-gray" onclick="sendCmd('TODAY_ON')">오늘관수 켜기</button>
+                <button class="btn btn-light-gray" id="btn-today-off" onclick="sendRainCmd('RAIN')">오늘관수 끄기</button>
+                <button class="btn btn-light-gray" id="btn-today-on" onclick="sendRainCmd('SUN')">오늘관수 켜기</button>
             </div>
         </div>
 
@@ -367,6 +376,7 @@
 <script>
     const WORKER_URL = 'https://songdo-moss.definezero.workers.dev/api/login';
     let mqttClient = null;
+    let sensorTimeout = null;
 
     // 초기 로드 시 세션 로그인 상태 확인
     window.addEventListener('DOMContentLoaded', () => {
@@ -429,60 +439,141 @@
     setInterval(updateClock, 1000);
     updateClock();
 
-    // 2. MQTT 통신 설정 (요청하신 브로커, 포트, 토픽 적용)
+    // 센서 타임아웃 처리 함수 (20초 동안 데이터 수신이 없으면 OFFLINE 전환)
+    function resetSensorTimeout() {
+        // 온라인 상태로 복구
+        const connStatus = document.getElementById('conn-status');
+        connStatus.innerText = 'GARDEN NOW(ONLINE)';
+        connStatus.style.backgroundColor = '#388e3c';
+
+        if (sensorTimeout) clearTimeout(sensorTimeout);
+
+        sensorTimeout = setTimeout(() => {
+            connStatus.innerText = 'GARDEN NOW(OFF-LINE)';
+            connStatus.style.backgroundColor = '#424242'; // 짙은 회색
+        }, 20000); // 20초
+    }
+
+    // 2. MQTT 통신 설정
     function initMQTT() {
         if (mqttClient) return;
 
         const brokerUrl = 'wss://broker.mqtt-dashboard.com:8884/mqtt';
-        const subTopic = 'SF26/SONGDO_MG/SENSOR';
+        const sensorTopic = 'SF26/SONGDO_MG/SENSOR';
+        const nowTopic = 'SF26/SONGDO_MG/NOW';
 
         mqttClient = mqtt.connect(brokerUrl);
 
         mqttClient.on('connect', function () {
-            document.getElementById('conn-status').innerText = 'GARDEN NOW(ONLINE)';
-            document.getElementById('conn-status').style.backgroundColor = '#388e3c'; 
+            resetSensorTimeout();
             console.log('MQTT 연결 성공!');
 
-            mqttClient.subscribe(subTopic, function (err) {
-                if (!err) console.log(`구독 완료: ${subTopic}`);
+            mqttClient.subscribe(sensorTopic, { qos: 2 }, function (err) {
+                if (!err) console.log(`구독 완료: ${sensorTopic}`);
+            });
+            mqttClient.subscribe(nowTopic, { qos: 2 }, function (err) {
+                if (!err) console.log(`구독 완료: ${nowTopic}`);
             });
         });
 
         mqttClient.on('offline', function () {
-            document.getElementById('conn-status').innerText = 'GARDEN NOW(OFF-LINE)';
-            document.getElementById('conn-status').style.backgroundColor = '#388e3c';
+            const connStatus = document.getElementById('conn-status');
+            connStatus.innerText = 'GARDEN NOW(OFF-LINE)';
+            connStatus.style.backgroundColor = '#424242';
         });
 
-        // 페이로드 파싱 (콤마 기준 구분: 2번째 데이터 = 온도, 5번째 데이터 = 습도)
         mqttClient.on('message', function (topic, payload) {
-            try {
-                const messageStr = payload.toString().trim();
-                console.log('수신된 페이로드:', messageStr);
+            const msgString = payload.toString().trim();
 
-                // 콤마(,)를 기준으로 문자열 분리
-                const parts = messageStr.split(',').map(item => item.trim());
+            if (topic === sensorTopic) {
+                // 센서 데이터 수신 시 타임아웃 리셋 (온라인 유지)
+                resetSensorTimeout();
 
-                // 2번째 데이터(인덱스 1) -> 온도
-                if (parts.length >= 2 && parts[1] !== "") {
-                    document.getElementById('temp-val').innerText = parts[1] + ' °C';
+                try {
+                    const parts = msgString.split(',').map(item => item.trim());
+                    // 2번째 데이터(인덱스 1) -> 온도
+                    if (parts.length >= 2 && parts[1] !== "") {
+                        document.getElementById('temp-val').innerText = parts[1] + ' °C';
+                    }
+                    // 5번째 데이터(인덱스 4) -> 습도
+                    if (parts.length >= 5 && parts[4] !== "") {
+                        document.getElementById('humi-val').innerText = parts[4] + ' %';
+                    }
+                } catch(e) {
+                    console.log('센서 페이로드 파싱 오류:', e);
                 }
+            } 
+            else if (topic === nowTopic) {
+                // NOW 토픽 수신 처리 (A ~ F 요구사항)
+                const pumpBox = document.getElementById('pump-status');
+                const todayBox = document.getElementById('today-status');
+                const btnAuto = document.getElementById('btn-auto');
+                const btnManual = document.getElementById('btn-manual');
+                const btnWater5 = document.getElementById('btn-water5');
+                const btnStop = document.getElementById('btn-stop');
+                const btnTodayOff = document.getElementById('btn-today-off');
+                const btnTodayOn = document.getElementById('btn-today-on');
 
-                // 5번째 데이터(인덱스 4) -> 습도
-                if (parts.length >= 5 && parts[4] !== "") {
-                    document.getElementById('humi-val').innerText = parts[4] + ' %';
+                if (msgString === 'P_RUN') {
+                    pumpBox.style.backgroundColor = '#42a5f5'; // 파란색
+                    pumpBox.innerText = '관수펌프 ON';
+                } 
+                else if (msgString === 'P_STOP') {
+                    pumpBox.style.backgroundColor = '#757575'; // 원래 회색
+                    pumpBox.innerText = '관수펌프 OFF';
+                } 
+                else if (msgString === 'TODAY_Y') {
+                    todayBox.innerText = '오늘 관수 가동';
+                } 
+                else if (msgString === 'TODAY_X') {
+                    todayBox.innerText = '오늘 관수 취소';
+                } 
+                else if (msgString === 'NOW_AUTO') {
+                    btnAuto.style.backgroundColor = 'rgb(18, 83, 27)';
+                    btnManual.style.backgroundColor = '#424242'; // 짙은 회색
+                    btnWater5.disabled = true;
+                    btnStop.disabled = true;
+                    btnTodayOff.disabled = false;
+                    btnTodayOn.disabled = false;
+                } 
+                else if (msgString === 'NOW_MANUAL') {
+                    btnAuto.style.backgroundColor = '#424242'; // 짙은 회색
+                    btnManual.style.backgroundColor = 'rgb(18, 83, 27)';
+                    btnWater5.disabled = false;
+                    btnStop.disabled = false;
+                    btnTodayOff.disabled = true;
+                    btnTodayOn.disabled = true;
                 }
-            } catch(e) {
-                console.log('페이로드 파싱 오류:', e);
             }
         });
     }
 
-    function sendCmd(command) {
+    // 관수 제어 명령 전송 함수 (QoS: 2, retain: false)
+    function sendIrrCmd(payload) {
         if (!mqttClient) return;
-        const pubTopic = 'saiifarm/moss/control';
-        mqttClient.publish(pubTopic, command);
-        console.log('명령 전송:', command);
-        alert(`명령이 전송되었습니다: ${command}`);
+        const topic = 'SF26/SONGDO_MG/IRR';
+        mqttClient.publish(topic, payload, { qos: 2, retain: false }, (err) => {
+            if (!err) {
+                console.log(`전송 성공 [${topic}]: ${payload}`);
+                alert(`명령이 전송되었습니다: ${payload}`);
+            } else {
+                console.error('전송 실패:', err);
+            }
+        });
+    }
+
+    // 오늘관수 제어 명령 전송 함수 (QoS: 2, retain: false)
+    function sendRainCmd(payload) {
+        if (!mqttClient) return;
+        const topic = 'SF26/SONGDO_MG/RAIN';
+        mqttClient.publish(topic, payload, { qos: 2, retain: false }, (err) => {
+            if (!err) {
+                console.log(`전송 성공 [${topic}]: ${payload}`);
+                alert(`명령이 전송되었습니다: ${payload}`);
+            } else {
+                console.error('전송 실패:', err);
+            }
+        });
     }
 </script>
 
