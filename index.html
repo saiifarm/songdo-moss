@@ -23,7 +23,7 @@
         }
 
         /* ==========================================
-           1. 로그인 화면 스타일 (첨부 이미지 스타일)
+           1. 로그인 화면 스타일
            ========================================== */
         #login-screen {
             display: flex;
@@ -142,19 +142,19 @@
             font-weight: 700;
         }
         .header-bar .time-display-box {
-            background-color: #388e3c;
+            background-color: #cbdecb;
             padding: 10px 0;
             margin: 0 -10px -10px -10px;
         }
         .header-bar .time-display {
-            font-size: 18px;
-            font-weight: 700;
+            font-size: 16px;
+            font-weight: 600;
             color: #ffffff;
         }
 
-        /* 공통 헤더 바 스타일 */
+        /* 공통 헤더 바 스타일 (배경색 #388e3c 적용) */
         .status-header, .control-header {
-            background-color: #556b2f;
+            background-color: #388e3c;
             color: white;
             font-size: 20px;
             font-weight: 700;
@@ -215,9 +215,9 @@
             box-shadow: 0 1px 3px rgba(0,0,0,0.2);
         }
 
-        /* 관수 제어 박스 영역 */
+        /* 관수 제어 박스 영역 (AUTO/MANUAL 배경을 더 어둡게 조정) */
         .control-section-bg {
-            background-color: #d0e4c9;
+            background-color: #b5ceb0;
             padding: 15px 12px;
         }
 
@@ -230,7 +230,8 @@
         .water-section-bg {
             background-color: #e2e8e0;
             padding: 15px 12px;
-            border-bottom: 2px solid #556b2f;
+            /* 안내문구 바로 위 두꺼운 구분선 적용 (3px solid #388e3c) */
+            border-bottom: 3px solid #388e3c;
         }
         
         /* 버튼 공통 스타일 */
@@ -307,10 +308,10 @@
             </div>
         </div>
         
-        <!-- 연결 상태 -->
+        <!-- 연결 상태 (배경색 #388e3c) -->
         <div class="status-header" id="conn-status">GARDEN NOW(CONNECTING...)</div>
         
-        <!-- 온습도 및 상태 수신판 -->
+        <!-- 온습도 및 상태 수신판 (문구 수정 반영) -->
         <div class="sensor-board">
             <div class="sensor-box">
                 <div class="sensor-label bg-red">온도</div>
@@ -320,14 +321,14 @@
                 <div class="sensor-label bg-blue">습도</div>
                 <div class="sensor-val" id="humi-val">-- %</div>
             </div>
-            <div class="status-box" id="today-status">관수 상태 대기</div>
-            <div class="status-box" id="pump-status">관수펌프 OFF</div>
+            <div class="status-box" id="today-status">오늘 관수진행</div>
+            <div class="status-box" id="pump-status">펌프 정지</div>
         </div>
 
-        <!-- 관수 제어 영역 헤더 -->
+        <!-- 관수 제어 영역 헤더 (배경색 #388e3c) -->
         <div class="control-header">관수제어</div>
         
-        <!-- AUTO / MANUAL 영역 -->
+        <!-- AUTO / MANUAL 영역 (더 어두운 배경색 적용) -->
         <div class="control-section-bg">
             <div class="control-grid">
                 <button class="btn btn-gray" onclick="sendCmd('MODE_AUTO')">AUTO</button>
@@ -335,7 +336,7 @@
             </div>
         </div>
 
-        <!-- 관수(5분), STOP 및 오늘관수 영역 -->
+        <!-- 관수(5분), STOP 및 오늘관수 영역 (하단 두꺼운 구분선 적용) -->
         <div class="water-section-bg">
             <div class="control-grid" style="margin-bottom: 15px;">
                 <button class="btn btn-blue" onclick="sendCmd('WATER_5MIN')">관수(5분)</button>
@@ -430,7 +431,7 @@
 
         mqttClient.on('connect', function () {
             document.getElementById('conn-status').innerText = 'GARDEN NOW(ONLINE)';
-            document.getElementById('conn-status').style.backgroundColor = '#556b2f'; 
+            document.getElementById('conn-status').style.backgroundColor = '#388e3c'; 
             console.log('MQTT 연결 성공!');
 
             mqttClient.subscribe(subTopic, function (err) {
@@ -440,7 +441,7 @@
 
         mqttClient.on('offline', function () {
             document.getElementById('conn-status').innerText = 'GARDEN NOW(OFF-LINE)';
-            document.getElementById('conn-status').style.backgroundColor = '#556b2f';
+            document.getElementById('conn-status').style.backgroundColor = '#388e3c';
         });
 
         mqttClient.on('message', function (topic, payload) {
