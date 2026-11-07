@@ -17,11 +17,99 @@
             background-color: #f5f5f5;
             display: flex;
             justify-content: center;
+            align-items: center;
+            min-height: 100vh;
             padding: 10px;
+        }
+
+        /* ==========================================
+           1. 로그인 화면 스타일 (첨부 이미지 스타일)
+           ========================================== */
+        #login-screen {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100vh;
+            position: fixed;
+            top: 0;
+            left: 0;
+            background-color: #e0e0e0;
+            z-index: 9999;
+        }
+        .login-card {
+            background: #ffffff;
+            width: 90%;
+            max-width: 380px;
+            padding: 40px 30px;
+            border-radius: 16px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+            text-align: center;
+        }
+        .login-logo {
+            margin-bottom: 12px;
+        }
+        .login-logo img {
+            max-width: 200px;
+            height: auto;
+            display: block;
+            margin: 0 auto;
+        }
+        .login-title {
+            font-size: 21px;
+            font-weight: bold;
+            color: #111111;
+            margin-bottom: 28px;
+        }
+        .input-group {
+            margin-bottom: 14px;
+        }
+        .input-group input {
+            width: 100%;
+            padding: 14px 16px;
+            font-size: 16px;
+            border: 1px solid #333333;
+            border-radius: 6px;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .input-group input:focus {
+            border-color: #2e7d32;
+        }
+        .login-btn {
+            width: 100%;
+            padding: 14px 0;
+            background-color: #2e7d32;
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            margin-top: 8px;
+            transition: background-color 0.2s;
+        }
+        .login-btn:hover {
+            background-color: #1b5e20;
+        }
+        .error-msg {
+            color: #d32f2f;
+            font-size: 14px;
+            font-weight: bold;
+            margin-top: 15px;
+            display: none;
+        }
+
+        /* ==========================================
+           2. 메인 대시보드 화면 스타일
+           ========================================== */
+        #main-dashboard {
+            display: none; /* 로그인 성공 전까지 숨김 */
+            width: 100%;
+            max-width: 450px;
         }
         .container {
             width: 100%;
-            max-width: 450px;
             background: #ffffff;
             border-radius: 8px;
             box-shadow: 0 4px 12px rgba(0,0,0,0.15);
@@ -182,67 +270,140 @@
 </head>
 <body>
 
-<div class="container">
-    <!-- 로고 -->
-    <div class="logo-area">
-        <img src="saiifarm-logo1-01.png" alt="saiifarm 로고">
-    </div>
-    
-    <!-- 타이틀 & 실시간 시계 -->
-    <div class="header-bar">
-        <h1>송도 MOSS GARDEN</h1>
-        <div class="time-display-box">
-            <div class="time-display" id="clock">2026년 10월 29일 00시 00분 00초</div>
+<!-- 1. 로그인 화면 -->
+<div id="login-screen">
+    <div class="login-card">
+        <div class="login-logo">
+            <img src="saiifarm-logo1-01.png" alt="saiifarm 로고">
         </div>
+        <div class="login-title">송도 모스가든</div>
+        
+        <form onsubmit="handleLogin(event)">
+            <div class="input-group">
+                <input type="text" id="username" placeholder="아이디" required autocomplete="username">
+            </div>
+            <div class="input-group">
+                <input type="password" id="password" placeholder="비밀번호" required autocomplete="current-password">
+            </div>
+            <button type="submit" class="login-btn">로그인</button>
+            <div id="errorMsg" class="error-msg">아이디 또는 비밀번호가 올바르지 않습니다.</div>
+        </form>
     </div>
-    
-    <!-- 연결 상태 -->
-    <div class="status-header" id="conn-status">GARDEN NOW(CONNECTING...)</div>
-    
-    <!-- 온습도 및 상태 수신판 -->
-    <div class="sensor-board">
-        <div class="sensor-box">
-            <div class="sensor-label bg-red">온도</div>
-            <div class="sensor-val" id="temp-val">-- °C</div>
-        </div>
-        <div class="sensor-box">
-            <div class="sensor-label bg-blue">습도</div>
-            <div class="sensor-val" id="humi-val">-- %</div>
-        </div>
-        <div class="status-box" id="today-status">관수 상태 대기</div>
-        <div class="status-box" id="pump-status">관수펌프 OFF</div>
-    </div>
+</div>
 
-    <!-- 관수 제어 영역 헤더 -->
-    <div class="control-header">관수제어</div>
-    
-    <!-- AUTO / MANUAL 영역 -->
-    <div class="control-section-bg">
-        <div class="control-grid">
-            <button class="btn btn-gray" onclick="sendCmd('MODE_AUTO')">AUTO</button>
-            <button class="btn btn-green" onclick="sendCmd('MODE_MANUAL')">MANUAL</button>
+<!-- 2. 메인 대시보드 화면 -->
+<div id="main-dashboard">
+    <div class="container">
+        <!-- 로고 -->
+        <div class="logo-area">
+            <img src="saiifarm-logo1-01.png" alt="saiifarm 로고">
         </div>
+        
+        <!-- 타이틀 & 실시간 시계 -->
+        <div class="header-bar">
+            <h1>송도 MOSS GARDEN</h1>
+            <div class="time-display-box">
+                <div class="time-display" id="clock">2026년 10월 29일 00시 00분 00초</div>
+            </div>
+        </div>
+        
+        <!-- 연결 상태 -->
+        <div class="status-header" id="conn-status">GARDEN NOW(CONNECTING...)</div>
+        
+        <!-- 온습도 및 상태 수신판 -->
+        <div class="sensor-board">
+            <div class="sensor-box">
+                <div class="sensor-label bg-red">온도</div>
+                <div class="sensor-val" id="temp-val">-- °C</div>
+            </div>
+            <div class="sensor-box">
+                <div class="sensor-label bg-blue">습도</div>
+                <div class="sensor-val" id="humi-val">-- %</div>
+            </div>
+            <div class="status-box" id="today-status">관수 상태 대기</div>
+            <div class="status-box" id="pump-status">관수펌프 OFF</div>
+        </div>
+
+        <!-- 관수 제어 영역 헤더 -->
+        <div class="control-header">관수제어</div>
+        
+        <!-- AUTO / MANUAL 영역 -->
+        <div class="control-section-bg">
+            <div class="control-grid">
+                <button class="btn btn-gray" onclick="sendCmd('MODE_AUTO')">AUTO</button>
+                <button class="btn btn-green" onclick="sendCmd('MODE_MANUAL')">MANUAL</button>
+            </div>
+        </div>
+
+        <!-- 관수(5분), STOP 및 오늘관수 영역 -->
+        <div class="water-section-bg">
+            <div class="control-grid" style="margin-bottom: 15px;">
+                <button class="btn btn-blue" onclick="sendCmd('WATER_5MIN')">관수(5분)</button>
+                <button class="btn btn-red" onclick="sendCmd('WATER_STOP')">STOP</button>
+            </div>
+
+            <div class="control-grid">
+                <button class="btn btn-light-gray" onclick="sendCmd('TODAY_OFF')">오늘관수 끄기</button>
+                <button class="btn btn-light-gray" onclick="sendCmd('TODAY_ON')">오늘관수 켜기</button>
+            </div>
+        </div>
+
+        <!-- 하단 문구 -->
+        <div class="notice">비가 2MM 이상 예보된 날은 관수를 꺼 주세요.</div>
+        <div class="footer">SAIIFARM 2026 / IRRIGATION SYSTEM</div>
     </div>
-
-    <!-- 관수(5분), STOP 및 오늘관수 영역 -->
-    <div class="water-section-bg">
-        <div class="control-grid" style="margin-bottom: 15px;">
-            <button class="btn btn-blue" onclick="sendCmd('WATER_5MIN')">관수(5분)</button>
-            <button class="btn btn-red" onclick="sendCmd('WATER_STOP')">STOP</button>
-        </div>
-
-        <div class="control-grid">
-            <button class="btn btn-light-gray" onclick="sendCmd('TODAY_OFF')">오늘관수 끄기</button>
-            <button class="btn btn-light-gray" onclick="sendCmd('TODAY_ON')">오늘관수 켜기</button>
-        </div>
-    </div>
-
-    <!-- 하단 문구 -->
-    <div class="notice">비가 2MM 이상 예보된 날은 관수를 꺼 주세요.</div>
-    <div class="footer">SAIIFARM 2026 / IRRIGATION SYSTEM</div>
 </div>
 
 <script>
+    const WORKER_URL = 'https://songdo-moss.definezero.workers.dev/api/login';
+    let mqttClient = null;
+
+    // 초기 로드 시 세션 로그인 상태 확인
+    window.addEventListener('DOMContentLoaded', () => {
+        if (sessionStorage.getItem('saiifarm_auth') === 'true') {
+            showDashboard();
+        }
+    });
+
+    // Cloudflare Worker 인증 처리
+    async function handleLogin(event) {
+        event.preventDefault();
+        const usernameInput = document.getElementById('username').value;
+        const passwordInput = document.getElementById('password').value;
+        const errorMsg = document.getElementById('errorMsg');
+
+        errorMsg.style.display = 'none';
+
+        try {
+            const response = await fetch(WORKER_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: usernameInput, password: passwordInput })
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                sessionStorage.setItem('saiifarm_auth', 'true');
+                showDashboard();
+            } else {
+                errorMsg.innerText = result.message || '아이디 또는 비밀번호가 올바르지 않습니다.';
+                errorMsg.style.display = 'block';
+            }
+        } catch (e) {
+            errorMsg.innerText = '로그인 서버 연결 중 오류가 발생했습니다.';
+            errorMsg.style.display = 'block';
+        }
+    }
+
+    // 로그인 성공 시 대시보드 화면으로 전환 및 MQTT 연결 시작
+    function showDashboard() {
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('main-dashboard').style.display = 'block';
+        initMQTT();
+    }
+
+    // 1. 실시간 시계 기능
     function updateClock() {
         const now = new Date();
         const year = now.getFullYear();
@@ -258,41 +419,47 @@
     setInterval(updateClock, 1000);
     updateClock();
 
-    const brokerUrl = 'wss://broker.hivemq.com:8884/mqtt';
-    const subTopic = 'saiifarm/moss/data';
-    const pubTopic = 'saiifarm/moss/control';
+    // 2. MQTT 통신 설정
+    function initMQTT() {
+        if (mqttClient) return;
 
-    const client = mqtt.connect(brokerUrl);
+        const brokerUrl = 'wss://broker.hivemq.com:8884/mqtt';
+        const subTopic = 'saiifarm/moss/data';
 
-    client.on('connect', function () {
-        document.getElementById('conn-status').innerText = 'GARDEN NOW(ONLINE)';
-        document.getElementById('conn-status').style.backgroundColor = '#556b2f'; 
-        console.log('MQTT 연결 성공!');
+        mqttClient = mqtt.connect(brokerUrl);
 
-        client.subscribe(subTopic, function (err) {
-            if (!err) console.log(`구독 완료: ${subTopic}`);
+        mqttClient.on('connect', function () {
+            document.getElementById('conn-status').innerText = 'GARDEN NOW(ONLINE)';
+            document.getElementById('conn-status').style.backgroundColor = '#556b2f'; 
+            console.log('MQTT 연결 성공!');
+
+            mqttClient.subscribe(subTopic, function (err) {
+                if (!err) console.log(`구독 완료: ${subTopic}`);
+            });
         });
-    });
 
-    client.on('offline', function () {
-        document.getElementById('conn-status').innerText = 'GARDEN NOW(OFF-LINE)';
-        document.getElementById('conn-status').style.backgroundColor = '#556b2f';
-    });
+        mqttClient.on('offline', function () {
+            document.getElementById('conn-status').innerText = 'GARDEN NOW(OFF-LINE)';
+            document.getElementById('conn-status').style.backgroundColor = '#556b2f';
+        });
 
-    client.on('message', function (topic, payload) {
-        try {
-            const data = JSON.parse(payload.toString());
-            if(data.temp) document.getElementById('temp-val').innerText = data.temp + ' °C';
-            if(data.humi) document.getElementById('humi-val').innerText = data.humi + ' %';
-            if(data.today) document.getElementById('today-status').innerText = data.today;
-            if(data.pump) document.getElementById('pump-status').innerText = data.pump;
-        } catch(e) {
-            console.log('일반 문자열 수신:', payload.toString());
-        }
-    });
+        mqttClient.on('message', function (topic, payload) {
+            try {
+                const data = JSON.parse(payload.toString());
+                if(data.temp) document.getElementById('temp-val').innerText = data.temp + ' °C';
+                if(data.humi) document.getElementById('humi-val').innerText = data.humi + ' %';
+                if(data.today) document.getElementById('today-status').innerText = data.today;
+                if(data.pump) document.getElementById('pump-status').innerText = data.pump;
+            } catch(e) {
+                console.log('일반 문자열 수신:', payload.toString());
+            }
+        });
+    }
 
     function sendCmd(command) {
-        client.publish(pubTopic, command);
+        if (!mqttClient) return;
+        const pubTopic = 'saiifarm/moss/control';
+        mqttClient.publish(pubTopic, command);
         console.log('명령 전송:', command);
         alert(`명령이 전송되었습니다: ${command}`);
     }
