@@ -49,23 +49,22 @@
             padding: 16px 10px 10px 10px;
         }
         .header-bar h1 {
-            font-size: 29px; /* 기존 24px의 1.2배 */
+            font-size: 29px;
             margin-bottom: 10px;
             font-weight: 700;
         }
-        /* 시간 표시 바 (연한 녹색 배경으로 구분) */
         .header-bar .time-display-box {
             background-color: #388e3c;
             padding: 10px 0;
             margin: 0 -10px -10px -10px;
         }
         .header-bar .time-display {
-            font-size: 18px; /* 기존 15px의 1.2배 */
-            font-weight: 700; /* 더 두껍게 */
+            font-size: 18px;
+            font-weight: 700;
             color: #ffffff;
         }
 
-        /* 공통 헤더 바 스타일 (GARDEN NOW, 관수제어 높이 및 글씨 스타일 통일) */
+        /* 공통 헤더 바 스타일 */
         .status-header, .control-header {
             background-color: #556b2f;
             color: white;
@@ -128,9 +127,9 @@
             box-shadow: 0 1px 3px rgba(0,0,0,0.2);
         }
 
-        /* 관수 제어 박스 영역 (AUTO/MANUAL 구분 연녹색 배경) */
+        /* 관수 제어 박스 영역 */
         .control-section-bg {
-            background-color: #d0e4c9; /* 이미지 상의 AUTO/MANUAL 영역 배경색 */
+            background-color: #d0e4c9;
             padding: 15px 12px;
         }
 
@@ -140,11 +139,10 @@
             gap: 12px;
         }
 
-        /* 중단 관수/STOP 및 하단 오늘관수 영역 배경 (연한 회색 배경 + 하단 녹색 라인 구분) */
         .water-section-bg {
-            background-color: #e2e8e0; /* 하단 버튼 영역 배경색 */
+            background-color: #e2e8e0;
             padding: 15px 12px;
-            border-bottom: 2px solid #556b2f; /* 하단 녹색 구분선 */
+            border-bottom: 2px solid #556b2f;
         }
         
         /* 버튼 공통 스타일 */
@@ -167,15 +165,15 @@
         .btn-red { background-color: #ea4335; }
         .btn-light-gray { background-color: #b0bec5; }
 
-        /* 하단 안내문구 및 푸터 (1.2배 크기 조절) */
+        /* 하단 안내문구 및 푸터 */
         .notice {
             padding: 20px 10px 8px 10px;
-            font-size: 17px; /* 기존 14px의 1.2배 */
+            font-size: 17px;
             font-weight: bold;
             color: #000;
         }
         .footer {
-            font-size: 14.4px; /* 기존 12px의 1.2배 */
+            font-size: 14.4px;
             color: #666;
             font-weight: 500;
             padding-bottom: 20px;
@@ -218,7 +216,7 @@
     <!-- 관수 제어 영역 헤더 -->
     <div class="control-header">관수제어</div>
     
-    <!-- AUTO / MANUAL 영역 (연녹색 별도 배경) -->
+    <!-- AUTO / MANUAL 영역 -->
     <div class="control-section-bg">
         <div class="control-grid">
             <button class="btn btn-gray" onclick="sendCmd('MODE_AUTO')">AUTO</button>
@@ -226,7 +224,7 @@
         </div>
     </div>
 
-    <!-- 관수(5분), STOP 및 오늘관수 영역 (회색 배경 + 녹색 하단 구분선) -->
+    <!-- 관수(5분), STOP 및 오늘관수 영역 -->
     <div class="water-section-bg">
         <div class="control-grid" style="margin-bottom: 15px;">
             <button class="btn btn-blue" onclick="sendCmd('WATER_5MIN')">관수(5분)</button>
@@ -239,13 +237,12 @@
         </div>
     </div>
 
-    <!-- 하단 문구 (1.2배 확대) -->
+    <!-- 하단 문구 -->
     <div class="notice">비가 2MM 이상 예보된 날은 관수를 꺼 주세요.</div>
     <div class="footer">SAIIFARM 2026 / IRRIGATION SYSTEM</div>
 </div>
 
 <script>
-    // 1. 실시간 시계 기능
     function updateClock() {
         const now = new Date();
         const year = now.getFullYear();
@@ -261,20 +258,17 @@
     setInterval(updateClock, 1000);
     updateClock();
 
-    // 2. MQTT 통신 설정 (본인의 브로커 정보와 토픽으로 수정하세요)
-    const brokerUrl = 'wss://broker.hivemq.com:8884/mqtt'; // 예시용 무료 웹소켓 브로커
-    const subTopic = 'saiifarm/moss/data'; // 온도, 습도, 상태 수신용 토픽
-    const pubTopic = 'saiifarm/moss/control'; // 관수 제어 명령 송신용 토픽
+    const brokerUrl = 'wss://broker.hivemq.com:8884/mqtt';
+    const subTopic = 'saiifarm/moss/data';
+    const pubTopic = 'saiifarm/moss/control';
 
     const client = mqtt.connect(brokerUrl);
 
-    // 브로커 연결 처리
     client.on('connect', function () {
         document.getElementById('conn-status').innerText = 'GARDEN NOW(ONLINE)';
         document.getElementById('conn-status').style.backgroundColor = '#556b2f'; 
         console.log('MQTT 연결 성공!');
 
-        // 토픽 구독
         client.subscribe(subTopic, function (err) {
             if (!err) console.log(`구독 완료: ${subTopic}`);
         });
@@ -285,10 +279,8 @@
         document.getElementById('conn-status').style.backgroundColor = '#556b2f';
     });
 
-    // 데이터 수신 (아두이노/ESP32 등에서 JSON 형태로 송신 시)
     client.on('message', function (topic, payload) {
         try {
-            // 예시: {"temp": 13.1, "humi": 53.5, "today": "오늘 관수진행", "pump": "관수펌프 OFF"}
             const data = JSON.parse(payload.toString());
             if(data.temp) document.getElementById('temp-val').innerText = data.temp + ' °C';
             if(data.humi) document.getElementById('humi-val').innerText = data.humi + ' %';
@@ -299,7 +291,6 @@
         }
     });
 
-    // 제어 명령 송신 함수 (버튼 클릭 시 실행)
     function sendCmd(command) {
         client.publish(pubTopic, command);
         console.log('명령 전송:', command);
